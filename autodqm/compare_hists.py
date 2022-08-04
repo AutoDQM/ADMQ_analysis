@@ -54,11 +54,11 @@ def process(chunk_index, chunk_size, config_dir,
                     continue
 
                 # Make pdf
-                results.canvas.write_image(pdf_path)
+                # results.canvas.write_image(pdf_path)
 
                 # Make png
-                subprocess.Popen(
-                    ['convert', '-density', '50', '-trim', '-fuzz', '1%', pdf_path, png_path])
+                # subprocess.Popen(
+                #     ['convert', '-density', '50', '-trim', '-fuzz', '1%', pdf_path, png_path])
 
                 # Make json
                 info = {
@@ -72,11 +72,12 @@ def process(chunk_index, chunk_size, config_dir,
                     'json_path': json_path,
                     'png_path': png_path,
                 }
-                with open(json_path, 'w') as jf:
-                    json.dump(info, jf)
+                #with open(json_path, 'w') as jf:
+                #    json.dump(info, jf)
             else:
-                with open(json_path) as jf:
-                    info = json.load(jf)
+                pass
+                #with open(json_path) as jf:
+                #    info = json.load(jf)
 
             hist_outputs.append(info)
 
@@ -123,8 +124,6 @@ def compile_histpairs(chunk_index, chunk_size, config_dir,
         except:
             missing_ref_dirs.append(ref_dirname)
             continue
-
-        print(data_dir)
 
         if not data_dir:
             raise error("Subsystem dir {0} not found in data root file".format(data_dirname))

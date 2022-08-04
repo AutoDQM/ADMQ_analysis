@@ -82,10 +82,17 @@ def ks(histpair, ks_cut=0.35, min_entries=10000, **kwargs):
     data_text = "data:"+str(histpair.data_run)
     artifacts = [data_hist_norm, ref_hist_norm, data_text, ref_text]
 
+    #data_run,data_sum,data_avg,data_std,ref_sum,ref_avg,ref_std
 
+    d = data_hist.values()
+    r = ref_hist.values()
+    #print(histpair.data_name)
     ## write csv files for analysis
     with open("csv/ks.csv", "a") as myfile:
-        myfile.write(f'{histpair.data_name},{ks_out},{histpair.ref_run},{histpair.data_run}\n')
+        text = (f'{histpair.data_name},{ks_out},{histpair.ref_run},{histpair.data_run},'
+                f'{d.sum()},{d.mean()},{d.std()},'
+                f'{r.sum()},{r.mean()},{r.std()}\n')
+        myfile.write(text)
 
 
     info = {

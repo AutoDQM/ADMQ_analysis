@@ -168,9 +168,19 @@ def beta_binomial(histpair, pull_cap=15, chi2_cut=100, pull_cut=10, min_entries=
     ##----- end 2D plotting --------
 
     ## write csv files for analysis
+    d = data_hist_raw
+    r = ref_hist_raw
     with open("csv/beta_binomial.csv", "a") as myfile:
-        myfile.write(f'{histpair.data_name},{max_pull},{chi2},{histpair.ref_run},{histpair.data_run}\n')
+        text = (f'{histpair.data_name},{max_pull},{chi2},{histpair.ref_run},{histpair.data_run},'
+                f'{d.sum()},{d.mean()},{d.std()},'
+                f'{r.sum()},{r.mean()},{r.std()}\n')
+        myfile.write(text)
 
+    ## write down hists that have weights
+    if data_hist.weighted:
+        print(data_hist.member("fSumw2"))
+    #     with open("histWWeights.csv", "a") as myfile:
+    #         myfile.write(f'{histpair.data_name}\n')
 
     info = {
         'Chi_Squared': float(round(chi2, 2)),

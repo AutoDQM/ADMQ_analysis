@@ -146,9 +146,15 @@ def pullvals(histpair,
     )
 
 
+    #print(histpair.data_name)
+    d = data_hist.values()
+    r = ref_hist.values()
     ## write csv files for analysis
     with open("csv/pullvals.csv", "a") as myfile:
-        myfile.write(f'{histpair.data_name},{max_pull},{chi2},{histpair.ref_run},{histpair.data_run}\n')
+        text = (f'{histpair.data_name},{max_pull},{chi2},{histpair.ref_run},{histpair.data_run},'
+                f'{d.sum()},{d.mean()},{d.std()},'
+                f'{r.sum()},{r.mean()},{r.std()}\n')
+        myfile.write(text)
 
 
     info = {
