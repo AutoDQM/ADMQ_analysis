@@ -7,9 +7,21 @@ import json
 class HistPair(object):
     """Data class for storing data and ref histograms to be compared by AutoDQM, as well as any relevant configuration parameters."""
 
-    def __init__(self, dqmSource, config,
-                 data_series, data_sample, data_run, data_name, data_hist,
-                 ref_series, ref_sample, ref_run, ref_name, ref_hist):
+    def __init__(
+        self,
+        dqmSource,
+        config,
+        data_series,
+        data_sample,
+        data_run,
+        data_name,
+        data_hist,
+        ref_series,
+        ref_sample,
+        ref_run,
+        ref_name,
+        ref_hist,
+    ):
 
         self.dqmSource = dqmSource
         self.config = config
@@ -26,32 +38,46 @@ class HistPair(object):
         self.ref_name = ref_name
         self.ref_hist = ref_hist
 
-        if self.dqmSource == 'Offline':
-            self.comparators = ['pull_values', 'ks_test', 'autodqm_ml_pca', 'beta_binomial']
+        if self.dqmSource == "Offline":
+            self.comparators = [
+                "pull_values",
+                "ks_test",
+                "autodqm_ml_pca",
+                "beta_binomial",
+            ]
         else:
             ## Currently ML PCA only trained with Offline data - AWB 2022.06.20
             ## If trained on Online in the future, need to update
             ## plugins/autodqm_ml_pca.py and models/autodqm_ml_pca/
-            self.comparators = ['pull_values', 'ks_test', 'beta_binomial']
+            self.comparators = ["pull_values", "ks_test", "beta_binomial"]
 
-        if not config['comparators'] is None:
-            self.comparators = config['comparators']
-
+        if not config["comparators"] is None:
+            self.comparators = config["comparators"]
 
     def __eq__(self, other):
-        return (isinstance(other, type(self))
-                and self.dqmSource == other.dqmSource
-                and self.query == other.config
-                and self.config == other.config
-                and self.data_name == other.data_name
-                and self.ref_name == other.ref_name
-                and self.comparators == other.comparators)
+        return (
+            isinstance(other, type(self))
+            and self.dqmSource == other.dqmSource
+            and self.query == other.config
+            and self.config == other.config
+            and self.data_name == other.data_name
+            and self.ref_name == other.ref_name
+            and self.comparators == other.comparators
+        )
 
     def __neq__(self, other):
         return not self == other
 
     def __hash__(self):
         return hash(
-            self.dqmSource + json.dumps(self.config, sort_keys=True) +
-            self.data_series + self.data_sample + self.data_run + self.data_name +
-            self.ref_series + self.ref_sample + self.ref_run + self.ref_name)
+            self.dqmSource
+            + json.dumps(self.config, sort_keys=True)
+            + self.data_series
+            + self.data_sample
+            + self.data_run
+            + self.data_name
+            + self.ref_series
+            + self.ref_sample
+            + self.ref_run
+            + self.ref_name
+        )

@@ -12,18 +12,27 @@ import argparse
 import sys
 
 
+## make it require at least 2 arguments (json file, subsystem name) and optional argument of ....black list????????? idk
 parser = argparse.ArgumentParser()
 parser.add_argument(
-    "args",
-    type=str,
-    help="first one json file, second is subsystem",
-    nargs='+'
+    "jsonfile", type=str, help="path to JSON file containing data:ref pairs"
 )
+parser.add_argument(
+    "subsystem", type=str, help="subsystem configuration to use. Example CSC or EMTF"
+)
+parser.add_argument(
+    "--blacklist",
+    type=str,
+    help="path to JSON file containing list of black listed hists",
+    default=None,
+    required=False
+)
+
 
 args = parser.parse_args()
 
+## these are just to pad out the compare_hist.process() function. We don't actually use these information
 config_dir = "../config"
-subsystem = args.args[1]
 data_series = "Run2018"
 data_sample = "SingleMuon"
 ref_series = "Run2018"
@@ -32,24 +41,39 @@ chunk_index = 0
 chunk_size = 9999
 dqmSource = "Offline"
 
-plotdir = "plots"
 
-datadict = json.load(open(args.args[0]))
+datadict = json.load(open(args.jsonfile))
+subsystem = args.subsystem
+
 
 ## create the csv files for storing the scores
 from pathlib import Path
 
 Path("csv").mkdir(parents=True, exist_ok=True)
-with open("csv/beta_binomial.csv", "w+") as myfile:
-    myfile.write("histname,bb_pull,bb_chi2,ref_run,data_run,data_sum,data_avg,data_std,ref_sum,ref_avg,ref_std\n")
-with open("csv/ks.csv", "w+") as myfile:
-    myfile.write("histname,ks,ref_run,data_run,data_sum,data_avg,data_std,ref_sum,ref_avg,ref_std\n")
-with open("csv/pullvals.csv", "w+") as myfile:
-    myfile.write("histname,maxpull,chi2,ref_run,data_run,data_sum,data_avg,data_std,ref_sum,ref_avg,ref_std\n")
+Path("tmp").mkdir(parents=True, exist_ok=True)
+with open("tmp/beta_binomial.csv", "w+") as myfile:
+    myfile.write(
+        "histname,bb_pull,bb_chi2,ref_run,data_run\n"
+    )
+with open("tmp/ks.csv", "w+") as myfile:
+    myfile.write(
+        "histname,ks,ref_run,data_run\n"
+    )
+with open("tmp/pullvals.csv", "w+") as myfile:
+    myfile.write(
+        "histname,maxpull,chi2,ref_run,data_run\n"
+    )
 
 ## for storing plots with weights
 # with open("histWWeights.csv", "a+") as myfile:
 #     myfile.write("histname\n")
+
+
+
+## take a list of runs and look for UL
+production = "UL"
+primary_dataset = "SingleMuon"
+
 
 for data_path in datadict:
     runnum_idx = data_path.find("_R000") + 5  # data_path[-11:-5]
@@ -75,25 +99,41 @@ for data_path in datadict:
         plugin_dir="../plugins/",
     )
 
-bb = pd.read_csv("csv/beta_binomial.csv")
-pv = pd.read_csv("csv/pullvals.csv")
-ks = pd.read_csv("csv/ks.csv")
+bb = pd.read_csv("tmp/beta_binomial.csv")
+pv = pd.read_csv("tmp/pullvals.csv")
+ks = pd.read_csv("tmp/ks.csv")
 
-mergekw = {'how':'outer', 'on':["histname", "data_run", "ref_run", "data_sum", "data_avg", "data_std", "ref_sum", "ref_avg", "ref_std"]}
-# histname,bb_pull,bb_chi2,ref_run,data_run,data_sum_x,data_avg_x,data_std_x,ref_sum_x,ref_avg_x,ref_std_x,maxpull,chi2,data_sum_y,data_avg_y,data_std_y,ref_sum_y,ref_avg_y,ref_std_y,ks,data_sum,data_avg,data_std,ref_sum,ref_avg,ref_std
+## find a way to merge with the data sum, data avg, data std correctly, or maybe remove them all together since it might not be useful
+mergekw = {
+    "how": "outer",
+    "on": ["histname", "data_run", "ref_run"],
+}  # "data_sum", "data_avg", "data_std", "ref_sum", "ref_avg", "ref_std"]}
+
+
+## need to think about how to use the blacklist?
+## remove the blacklisted rows before saving the csv? remove the blacklisted rows before making the plots?
+## probably can remove the blacklisted plots from the merged df
+
+## i think also print the 95 percentile number for each test
+## use the merged df and not the 1d/2d so that betabinomial isn't split into 2 number
+
+
 merged = bb.merge(pv, **mergekw)
 merged = merged.merge(ks, **mergekw)
 
-#merged.to_csv(f"csv/{subsystem}.csv")
+merged.to_csv(f"csv/{subsystem}.csv")
+
+## take the merged1d and merged2d out of the try except thing, then can check if any of them are empty and run the code accordingly
+## should also be saving the beta-binomial, ks, pullvals.csv in another folder. maybe make a tmp folder
 
 
 try:
     merged1d = merged[~np.isnan(merged.ks)]
     fig, ax = plt.subplots(3)
-    ax[0].hist( merged1d.ks)
+    ax[0].hist(merged1d.ks)
     ax[0].set_title(f"{subsystem} ks, beta-binom pull, beta-binom chi2")
     ax[1].hist(np.absolute(merged1d.bb_pull), bins=20)
-    _, bins, _ = ax[2].hist(merged1d.bb_chi2, bins=21, range=(0,105))
+    _, bins, _ = ax[2].hist(merged1d.bb_chi2, bins=21, range=(0, 105))
     xlabels = ax[2].get_xticks().tolist()
     xlabels = [str(x) for x in xlabels[0:-1]]
     xlabels[-1] += "+"
@@ -113,9 +153,13 @@ try:
     xmax = 37
     histkwarg = {"bins": 20, "alpha": 0.5, "range": (0, xmax)}
     ax.hist(
-        np.clip(np.absolute(merged2d.maxpull), a_min=None, a_max=xmax), label="max_pull", **histkwarg
+        np.clip(np.absolute(merged2d.maxpull), a_min=None, a_max=xmax),
+        label="max_pull",
+        **histkwarg,
     )
-    _, bins, _ = ax.hist(np.absolute(merged2d.bb_pull), label="beta_binomial", **histkwarg)
+    _, bins, _ = ax.hist(
+        np.absolute(merged2d.bb_pull), label="beta_binomial", **histkwarg
+    )
     xlabels = ax.get_xticks().tolist()
     xlabels = [str(x) for x in xlabels[0:-1]]
     xlabels[-1] += "+"
