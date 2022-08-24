@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-import uproot
 import numpy
-from scipy.stats import chi2
-from autodqm.plugin_results import PluginResults
-import scipy
 import plotly.graph_objects as go
+import scipy
+import uproot
+from scipy.stats import chi2
+
+from autodqm.plugin_results import PluginResults
 
 
 def comparators():
@@ -24,7 +25,7 @@ def pullvals(
 
     """Can handle poisson driven TH2s or generic TProfile2Ds"""
     data_hist = histpair.data_hist
-    ref_hist = histpair.ref_hist
+    ref_hist = histpair.ref_hists[0]
 
     # Check that the hists are histograms
     # Check that the hists are 2 dimensional
@@ -170,13 +171,7 @@ def pullvals(
     # Getting Plot Titles for histogram, x-axis and y-axis
     xAxisTitle = data_hist.axes[0]._bases[0]._members["fTitle"]
     yAxisTitle = data_hist.axes[1]._bases[0]._members["fTitle"]
-    plotTitle = (
-        histpair.data_name
-        + " Pull Values  |  data:"
-        + str(histpair.data_run)
-        + " & ref:"
-        + str(histpair.ref_run)
-    )
+    plotTitle = histpair.data_name + " Pull Values  |  data:" + str(histpair.data_run) + " & ref:" + str(histpair.ref_runs[0])
 
     # Plotly doesn't support #circ, #theta, #phi but does support unicode
     xAxisTitle = (
@@ -240,7 +235,7 @@ def pullvals(
     ## write csv files for analysis
     with open("tmp/pullvals.csv", "a") as myfile:
         text = (
-            f"{histpair.data_name},{max_pull},{chi2},{histpair.ref_run},{histpair.data_run}\n"
+            f'{histpair.data_name},{max_pull},{chi2},"{histpair.ref_runs}",{histpair.data_run}\n'
         )
         myfile.write(text)
 

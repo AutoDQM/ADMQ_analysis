@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import matplotlib.pyplot as plt
-import os
-import numpy as np
-import matplotlib as mpl
-import compare_hists
-import pandas as pd
-import json
 import argparse
+import json
+import os
 import sys
 
+import compare_hists
+import matplotlib as mpl
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
 
 ## make it require at least 2 arguments (json file, subsystem name) and optional argument of ....black list????????? idk
 parser = argparse.ArgumentParser()
@@ -78,9 +78,9 @@ primary_dataset = "SingleMuon"
 for data_path in datadict:
     runnum_idx = data_path.find("_R000") + 5  # data_path[-11:-5]
     data_run = data_path[runnum_idx : runnum_idx + 6]
-    ref_path = datadict[data_path]
-    runnum_idx = ref_path.find("_R000") + 5
-    ref_run = ref_path[runnum_idx : runnum_idx + 6]
+    ref_paths = datadict[data_path]
+    runnum_idx = ref_paths[0].find("_R000") + 5
+    ref_runs = [ref_path[runnum_idx : runnum_idx + 6] for ref_path in ref_paths]
     compare_hists.process(
         chunk_index,
         chunk_size,
@@ -93,8 +93,8 @@ for data_path in datadict:
         data_path,
         ref_series,
         ref_sample,
-        ref_run,
-        ref_path,
+        ref_runs,
+        ref_paths,
         output_dir="./out/",
         plugin_dir="../plugins/",
     )
